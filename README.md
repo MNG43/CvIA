@@ -1,0 +1,1 @@
+# Smart HR Sourcing - Monorepo
