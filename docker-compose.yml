@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # ---- Zookeeper (nécessaire pour Kafka) ----
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - hr-network
+
+  # ---- Kafka (broker de messages) ----
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    networks:
+      - hr-network
+
+  # ---- PostgreSQL pour Auth Service ----
+  postgres-auth:
+    image: postgres:16
+    container_name: postgres-auth
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5435:5432"
+    volumes:
+      - auth_data:/var/lib/postgresql/data
+    networks:
+      - hr-network
+
+  # ---- PostgreSQL pour Job Service ----
+  postgres-job:
+    image: postgres:16
+    container_name: postgres-job
+    environment:
+      POSTGRES_DB: job_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
+    volumes:
+      - job_data:/var/lib/postgresql/data
+    networks:
+      - hr-network
+
+  # ---- PostgreSQL pour Candidate Service ----
+  postgres-candidate:
+    image: postgres:16
+    container_name: postgres-candidate
+    environment:
+      POSTGRES_DB: candidate_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5434:5432"
+    volumes:
+      - candidate_data:/var/lib/postgresql/data
+    networks:
+      - hr-network
+
+networks:
+  hr-network:
+    driver: bridge
+
+volumes:
+  auth_data:
+  job_data:
+  candidate_data:
