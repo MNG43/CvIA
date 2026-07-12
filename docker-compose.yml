@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ---- Kafka (avec KRaft, sans Zookeeper) ----
   kafka:
@@ -69,6 +67,43 @@ services:
     networks:
       - hr-network
 
+  # ---- PostgreSQL pour AI Service (avec PgVector) ----
+  postgres-vector:
+    image: pgvector/pgvector:pg16
+    container_name: postgres-vector
+    environment:
+      POSTGRES_DB: vector_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5436:5432"
+    volumes:
+      - vector_data:/var/lib/postgresql/data
+      - ./docker/init-vector-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - hr-network
+
+  # ---- AI Service ----
+  ai-service:
+    build:
+      context: ./microservices/ai-service
+      dockerfile: Dockerfile
+    container_name: ai-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-vector:5432/vector_db
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_CLIENT_ENABLED: "false"
+      OLLAMA_BASE_URL: http://host.docker.internal:11434/v1
+    depends_on:
+      - postgres-vector
+      - kafka
+    networks:
+      - hr-network
+
 networks:
   hr-network:
     driver: bridge
@@ -77,3 +112,4 @@ volumes:
   auth_data:
   job_data:
   candidate_data:
+  vector_data:
