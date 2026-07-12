@@ -1,0 +1,67 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+  profiles:
+    active: dev
+  datasource:
+    url: jdbc:postgresql://localhost:5432/auth_db
+    username: ${DB_USERNAME:auth_user}
+    password: ${DB_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        show_sql: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  security:
+    jwt:
+      secret: ${JWT_SECRET:47a0e8e6d7c9f3a1b2c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5g6}
+      expiration: 86400000
+      refresh-expiration: 604800000
+  cloud:
+    discovery:
+      enabled: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    hostname: ${HOSTNAME:localhost}
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,beans,mappings,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    try-it-out-enabled: true
+
+logging:
+  level:
+    com.smarthr.auth: DEBUG
+    org.springframework.security: INFO
+  file:
+    name: logs/auth-service.log
