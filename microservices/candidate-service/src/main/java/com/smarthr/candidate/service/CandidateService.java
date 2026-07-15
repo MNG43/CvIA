@@ -1,5 +1,7 @@
 package com.smarthr.candidate.service;
 
+import com.smarthr.candidate.client.JobServiceClient;
+import com.smarthr.candidate.dto.JobDTO;
 import com.smarthr.candidate.entity.Application;
 import com.smarthr.candidate.entity.ApplicationStatus;
 import com.smarthr.candidate.entity.Candidate;
@@ -24,6 +26,7 @@ public class CandidateService {
     private final CandidateRepository candidateRepository;
     private final ApplicationRepository applicationRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
+    private final JobServiceClient jobServiceClient; 
 
     /**
      * Upload d'un CV, extraction du texte, création du candidat et de l'application
@@ -37,6 +40,7 @@ public class CandidateService {
             PDFTextStripper stripper = new PDFTextStripper();
             extractedText = stripper.getText(document);
         }
+        log.info("Texte extrait du CV : {} caractères", extractedText.length());
 
         // 2. Sauvegarde du candidat
         Candidate candidate = new Candidate();
@@ -60,12 +64,37 @@ public class CandidateService {
             log.info("Application créée avec l'ID : {}", application.getId());
         }
 
-        // 4. Publication de l'événement Kafka
+        // 4. Récupérer les informations du job via Feign Client
+        String jobDescription = "Description du poste non disponible";
+        String jobTitle = "Poste " + jobId;
+        
+        if (jobId != null) {
+            try {
+                log.info("🔍 Récupération des informations du job {} via Feign Client...", jobId);
+                JobDTO job = jobServiceClient.getJobById(jobId);
+                
+                if (job != null) {
+                    jobTitle = job.getTitle() != null ? job.getTitle() : jobTitle;
+                    jobDescription = job.getDescription() != null ? job.getDescription() : jobDescription;
+                    log.info("Informations du job récupérées : {}", jobTitle);
+                    log.info("   Description : {}...", jobDescription.substring(0, Math.min(50, jobDescription.length())));
+                } else {
+                    log.warn("Job {} non trouvé, utilisation des valeurs par défaut", jobId);
+                }
+            } catch (Exception e) {
+                log.error("Erreur lors de la récupération du job {} : {}", jobId, e.getMessage());
+                // Fallback: on continue avec les valeurs par défaut
+            }
+        }
+
+        // 5. Publication de l'événement Kafka
         String message = String.format(
-                "{\"candidateId\": %d, \"cvText\": \"%s\", \"jobId\": %d}",
+                "{\"candidateId\": %d, \"cvText\": \"%s\", \"jobId\": %d, \"jobDescription\": \"%s\", \"jobTitle\": \"%s\"}",
                 candidate.getId(),
-                extractedText.replace("\"", "\\\"").replace("\n", " "),
-                jobId != null ? jobId : 0);
+                extractedText.replace("\"", "\\\"").replace("\n", " ").replace("\r", " "),
+                jobId != null ? jobId : 0,
+                jobDescription.replace("\"", "\\\"").replace("\n", " ").replace("\r", " "),
+                jobTitle.replace("\"", "\\\""));
         kafkaTemplate.send("cv-uploaded", message);
         log.info("Événement cv-uploaded publié pour le candidat ID: {}", candidate.getId());
 

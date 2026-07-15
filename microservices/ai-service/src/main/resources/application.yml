@@ -1,3 +1,4 @@
+# Fichier: src/main/resources/application.yml
 spring:
     application:
         name: ai-service
@@ -5,7 +6,7 @@ spring:
         config:
             enabled: false
     datasource:
-        url: jdbc:postgresql://localhost:5436/vector_db
+        url: jdbc:postgresql://postgres-vector:5432/vector_db
         username: user
         password: password
         driver-class-name: org.postgresql.Driver
@@ -17,7 +18,7 @@ spring:
             hibernate:
                 dialect: org.hibernate.dialect.PostgreSQLDialect
     kafka:
-        bootstrap-servers: localhost:9092
+        bootstrap-servers: kafka:9092
         consumer:
             group-id: ai-group
             auto-offset-reset: earliest
@@ -29,11 +30,18 @@ spring:
     ai:
         openai:
             api-key: ${OLLAMA_API_KEY:sk-test}
-            base-url: ${OLLAMA_BASE_URL:http://localhost:11434/v1}
+            base-url: ${OLLAMA_BASE_URL:http://192.168.1.167:11434}
             chat:
                 options:
                     model: ${OLLAMA_MODEL:llama3.2}
                     temperature: 0.7
+            embedding:
+                options:
+                    model: nomic-embed-text
+
+ollama:
+    base-url: http://192.168.1.167:11434
+    model: nomic-embed-text
 
 server:
     port: 8084

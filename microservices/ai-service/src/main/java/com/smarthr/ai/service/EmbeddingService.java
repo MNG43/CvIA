@@ -7,14 +7,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
-import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.ai.embedding.EmbeddingRequest;
-import org.springframework.ai.embedding.EmbeddingResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -23,7 +19,7 @@ public class EmbeddingService {
     private static final Logger logger = LoggerFactory.getLogger(EmbeddingService.class);
 
     @Autowired
-    private EmbeddingModel embeddingModel;
+    private OllamaEmbeddingService ollamaEmbeddingService;
 
     @Autowired(required = false)
     private ChatClient chatClient;
@@ -33,15 +29,19 @@ public class EmbeddingService {
 
     public float[] generateEmbedding(String text) {
         try {
-            EmbeddingRequest request = new EmbeddingRequest(List.of(text), null);
-            EmbeddingResponse response = embeddingModel.call(request);
-            float[] embeddingArray = response.getResults().get(0).getOutput();
-            
-            logger.info("Embedding généré avec succès (dimension: {})", embeddingArray.length);
+            float[] embeddingArray = ollamaEmbeddingService.generateEmbedding(text);
+            logger.info("Embedding généré avec succès via Ollama (dimension: {})", embeddingArray.length);
             return embeddingArray;
         } catch (Exception e) {
             logger.error("Erreur lors de la génération de l'embedding", e);
-            throw new RuntimeException("Impossible de générer l'embedding", e);
+            // Fallback sur le mock si Ollama échoue
+            logger.warn("Fallback sur le mock embedding");
+            float[] mockEmbedding = new float[768];
+            java.util.Random random = new java.util.Random(text.hashCode());
+            for (int i = 0; i < 768; i++) {
+                mockEmbedding[i] = random.nextFloat() * 2 - 1;
+            }
+            return mockEmbedding;
         }
     }
 
@@ -68,14 +68,31 @@ public class EmbeddingService {
     }
 
     @Transactional
-    public void saveEmbedding(Long candidateId, Long jobId, String vector, double score) {
-        Embedding embedding = new Embedding();
-        embedding.setCandidateId(candidateId);
-        embedding.setJobId(jobId);
-        embedding.setVector(vector);
-        embedding.setScore(score);
-        embeddingRepository.save(embedding);
-        logger.info("Embedding sauvegardé pour candidateId={}, jobId={}, score={}", candidateId, jobId, score);
+    public void saveEmbedding(Long candidateId, Long jobId, float[] vectorArray, double score) {
+        try {
+            Embedding embedding = new Embedding();
+            embedding.setCandidateId(candidateId);
+            embedding.setJobId(jobId);
+            embedding.setScore(score);
+            embedding.setVector(vectorArrayToString(vectorArray));
+            embeddingRepository.save(embedding);
+            logger.info("Embedding sauvegardé pour candidateId={}, jobId={}, score={}", candidateId, jobId, score);
+        } catch (Exception e) {
+            logger.error("Erreur lors de la sauvegarde de l'embedding", e);
+            throw new RuntimeException("Impossible de sauvegarder l'embedding", e);
+        }
+    }
+
+    private String vectorArrayToString(float[] vector) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < vector.length; i++) {
+            sb.append(vector[i]);
+            if (i < vector.length - 1) {
+                sb.append(",");
+            }
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
     public String generateSummary(String cvText, String jobDescription, String jobTitle) {

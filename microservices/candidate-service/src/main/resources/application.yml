@@ -16,6 +16,19 @@ spring:
     kafka:
         bootstrap-servers: localhost:9092
 
+    # Configuration de Feign
+feign:
+    client:
+        config:
+            default:
+                connectTimeout: 5000
+                readTimeout: 5000
+                loggerLevel: basic
+    httpclient:
+        enabled: true
+        max-connections: 200
+        max-connections-per-route: 50
+
 server:
     port: 8083
 
@@ -23,3 +36,8 @@ eureka:
     client:
         service-url:
             defaultZone: http://localhost:8761/eureka/
+
+# Fichier: src/main/resources/application.yml (ajouter à la fin)
+job:
+    service:
+        url: http://localhost:8081 # URL du Job Service
