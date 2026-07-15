@@ -11,8 +11,6 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-
 @Service
 public class CVConsumer {
 
@@ -27,40 +25,51 @@ public class CVConsumer {
     @Autowired
     private KafkaTemplate<String, String> kafkaTemplate;
 
-    @KafkaListener(topics = "cv.uploaded", groupId = "ai-group")
+    @KafkaListener(topics = "cv-uploaded", groupId = "ai-group")
     public void handleCVUploaded(String message) {
         try {
-            logger.info("Message reçu sur le topic cv.uploaded : {}", message);
+            logger.info("=== Service IA : Réception d'un CV ===");
             
             CVUploadedEvent event = objectMapper.readValue(message, CVUploadedEvent.class);
-            logger.info("Traitement du CV pour candidateId={}, jobId={}", event.getCandidateId(), event.getJobId());
+            
+            logger.info("Candidat ID: {}, Offre ID: {}", event.getCandidateId(), event.getJobId());
 
-            // Générer les embeddings pour le CV et l'offre
+            if (event.getCvText() == null || event.getCvText().isEmpty()) {
+                logger.error("Le texte du CV est vide pour le candidat {}", event.getCandidateId());
+                return;
+            }
+
+            String jobDescription = event.getJobDescription();
+            if (jobDescription == null || jobDescription.isEmpty()) {
+                jobDescription = "Description du poste non disponible";
+                logger.warn("Aucune description de poste fournie");
+            }
+
             float[] cvEmbedding = embeddingService.generateEmbedding(event.getCvText());
-            float[] jobEmbedding = embeddingService.generateEmbedding(event.getJobDescription());
+            float[] jobEmbedding = embeddingService.generateEmbedding(jobDescription);
 
-            // Calculer le score de similarité (matching)
             double similarityScore = embeddingService.calculateCosineSimilarity(cvEmbedding, jobEmbedding);
-            double matchingScore = similarityScore * 100; // Convertir en pourcentage
+            double matchingScore = Math.round(similarityScore * 1000.0) / 10.0;
 
-            logger.info("Score de matching calculé : {}%", matchingScore);
+            logger.info("Score de matching : {}%", matchingScore);
 
-            // Générer le résumé IA
+            String jobTitle = event.getJobTitle() != null ? event.getJobTitle() : "Offre " + event.getJobId();
             String summary = embeddingService.generateSummary(
                 event.getCvText(),
-                event.getJobDescription(),
-                event.getJobTitle()
+                jobDescription,
+                jobTitle
             );
 
-            // Extraire les points forts et faibles
             String strengths = embeddingService.extractStrengths(summary);
             String weaknesses = embeddingService.extractWeaknesses(summary);
 
-            // Sauvegarder l'embedding dans la base vectorielle
-            String vectorString = Arrays.toString(cvEmbedding);
-            embeddingService.saveEmbedding(event.getCandidateId(), event.getJobId(), vectorString, matchingScore);
+            embeddingService.saveEmbedding(
+                event.getCandidateId(), 
+                event.getJobId(), 
+                cvEmbedding,  
+                matchingScore
+            );
 
-            // Créer et publier l'événement cv.analyzed
             CVAnalyzedEvent analyzedEvent = new CVAnalyzedEvent(
                 event.getCandidateId(),
                 event.getJobId(),
@@ -71,13 +80,13 @@ public class CVConsumer {
             );
 
             String analyzedMessage = objectMapper.writeValueAsString(analyzedEvent);
-            kafkaTemplate.send("cv.analyzed", analyzedMessage);
+            kafkaTemplate.send("cv-analyzed", analyzedMessage);
 
-            logger.info("Événement cv.analyzed envoyé pour candidateId={}, jobId={}, score={}%", 
-                event.getCandidateId(), event.getJobId(), matchingScore);
+            logger.info("Analyse terminée pour le candidat {} (Score: {}%)", 
+                event.getCandidateId(), matchingScore);
 
         } catch (Exception e) {
-            logger.error("Erreur lors du traitement du message cv.uploaded", e);
+            logger.error("Erreur lors du traitement du CV", e);
         }
     }
 }

@@ -22,7 +22,7 @@ public class Embedding {
     @Column(name = "job_id", nullable = false)
     private Long jobId;
 
-    @Column(name = "vector", columnDefinition = "vector(1536)")
+    @Column(name = "vector", columnDefinition = "vector(768)")
     private String vector;
 
     @Column(name = "score", nullable = false)
