@@ -83,6 +83,97 @@ services:
     networks:
       - hr-network
 
+  # ---- Discovery Service (Eureka) ----
+  discovery-service:
+    build:
+      context: ./microservices/discovery-service
+      dockerfile: Dockerfile
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+    networks:
+      - hr-network
+
+  # ---- Config Service ----
+  config-service:
+    build:
+      context: ./microservices/config-service
+      dockerfile: Dockerfile
+    container_name: config-service
+    ports:
+      - "8888:8888"
+    environment:
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-service:8761/eureka/
+    depends_on:
+      - discovery-service
+    networks:
+      - hr-network
+
+  # ---- Auth Service ----
+  auth-service:
+    build:
+      context: ./microservices/auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-auth:5432/auth_db
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_CLOUD_CONFIG_ENABLED: "false"
+    depends_on:
+      - postgres-auth
+      - discovery-service
+      - config-service
+    networks:
+      - hr-network
+
+  # ---- Job Service ----
+  job-service:
+    build:
+      context: ./microservices/job-service
+      dockerfile: Dockerfile
+    container_name: job-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-job:5432/job_db
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_CLOUD_CONFIG_ENABLED: "false"
+    depends_on:
+      - postgres-job
+      - discovery-service
+      - config-service
+    networks:
+      - hr-network
+
+  # ---- Candidate Service ----
+  candidate-service:
+    build:
+      context: ./microservices/candidate-service
+      dockerfile: Dockerfile
+    container_name: candidate-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-candidate:5432/candidate_db
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_CLOUD_CONFIG_ENABLED: "false"
+    depends_on:
+      - postgres-candidate
+      - kafka
+      - discovery-service
+      - config-service
+    networks:
+      - hr-network
+
   # ---- AI Service ----
   ai-service:
     build:
@@ -96,15 +187,68 @@ services:
       SPRING_DATASOURCE_USERNAME: user
       SPRING_DATASOURCE_PASSWORD: password
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      EUREKA_CLIENT_ENABLED: "false"
-      OLLAMA_BASE_URL: http://192.168.1.167:11434
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_CLOUD_CONFIG_ENABLED: "false"
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       LOGGING_LEVEL_AI: DEBUG
       LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: INFO
     extra_hosts:
-      - "host.docker.internal:192.168.1.167"  
+      - "host.docker.internal:host-gateway"
     depends_on:
       - postgres-vector
       - kafka
+      - discovery-service
+      - config-service
+    networks:
+      - hr-network
+
+  # ---- Notification Service ----
+  notification-service:
+    build:
+      context: ./microservices/notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_CLOUD_CONFIG_ENABLED: "false"
+    depends_on:
+      - kafka
+      - discovery-service
+      - config-service
+    networks:
+      - hr-network
+
+  # ---- Gateway Service ----
+  gateway-service:
+    build:
+      context: ./microservices/gateway-service
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    ports:
+      - "8080:8080"
+    environment:
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_CLOUD_CONFIG_ENABLED: "false"
+    depends_on:
+      - discovery-service
+      - config-service
+    networks:
+      - hr-network
+
+  # ---- Frontend Test ----
+  frontend-test:
+    build:
+      context: ./frontend-test
+      dockerfile: Dockerfile
+    container_name: frontend-test
+    ports:
+      - "3000:80"
+    depends_on:
+      - gateway-service
+      - ai-service
     networks:
       - hr-network
 

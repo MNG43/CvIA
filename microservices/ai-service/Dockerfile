@@ -1,8 +1,10 @@
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
+# Copy pom files first for better caching
 COPY pom.xml .
+RUN mvn dependency:go-offline -B || mvn dependency:resolve -B
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN mvn clean package -DskipTests -B
 
 FROM eclipse-temurin:17-jre
 WORKDIR /app

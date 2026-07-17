@@ -3,9 +3,10 @@ package com.smarthr.ai.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-import org.springframework.http.MediaType;
 
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,19 @@ public class OllamaEmbeddingService {
         this.ollamaUrl = ollamaUrl;
         this.modelName = modelName;
         this.restClient = RestClient.create();
+    }
+
+    public boolean isAvailable() {
+        try {
+            restClient.get()
+                .uri(ollamaUrl + "/api/tags")
+                .retrieve()
+                .toBodilessEntity();
+            return true;
+        } catch (Exception e) {
+            logger.warn("Ollama indisponible sur {}: {}", ollamaUrl, e.getMessage());
+            return false;
+        }
     }
 
     public float[] generateEmbedding(String text) {

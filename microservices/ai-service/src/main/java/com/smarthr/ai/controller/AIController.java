@@ -1,15 +1,21 @@
 package com.smarthr.ai.controller;
 
 import com.smarthr.ai.service.EmbeddingService;
+import com.smarthr.ai.service.OllamaEmbeddingService;
+import com.smarthr.ai.service.PDFParserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -21,6 +27,12 @@ public class AIController {
 
     @Autowired
     private EmbeddingService embeddingService;
+
+    @Autowired
+    private PDFParserService pdfParserService;
+
+    @Autowired
+    private OllamaEmbeddingService ollamaEmbeddingService;
 
     @PostMapping("/analyze")
     @Operation(summary = "Analyser un CV par rapport à une offre d'emploi", description = "Génère une analyse IA du CV par rapport à l'offre")
@@ -50,6 +62,59 @@ public class AIController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Erreur lors de l'analyse du CV", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "error", "Erreur lors de l'analyse: " + e.getMessage(),
+                "success", false
+            ));
+        }
+    }
+
+    @PostMapping(value = "/analyze-cvs", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Analyser des CVs PDF", description = "Extrait le texte des PDFs et génère une analyse IA")
+    public ResponseEntity<Map<String, Object>> analyzeCVs(
+            @RequestParam("cv1") MultipartFile cv1,
+            @RequestParam(value = "cv2", required = false) MultipartFile cv2,
+            @RequestParam(value = "jobDescription", required = false) String jobDescription) {
+        try {
+            List<MultipartFile> files = new ArrayList<>();
+            files.add(cv1);
+            if (cv2 != null && !cv2.isEmpty()) {
+                files.add(cv2);
+            }
+
+            String jobDesc = jobDescription != null ? jobDescription : "Poste non spécifié";
+            String jobTitle = "Candidat";
+            List<Map<String, Object>> analyses = new ArrayList<>();
+
+            for (MultipartFile file : files) {
+                if (file == null || file.isEmpty()) {
+                    continue;
+                }
+
+                String cvText = pdfParserService.cleanText(
+                        pdfParserService.extractTextFromPDF(file.getInputStream()));
+
+                String summary = embeddingService.generateSummary(cvText, jobDesc, jobTitle);
+                float[] cvEmbedding = embeddingService.generateEmbedding(cvText);
+                float[] jobEmbedding = embeddingService.generateEmbedding(jobDesc);
+                double similarity = embeddingService.calculateCosineSimilarity(cvEmbedding, jobEmbedding);
+                int score = (int) Math.round(similarity * 100);
+
+                Map<String, Object> analysis = new HashMap<>();
+                analysis.put("fileName", file.getOriginalFilename());
+                analysis.put("summary", summary);
+                analysis.put("score", score);
+                analysis.put("skills", embeddingService.extractStrengths(summary));
+                analysis.put("experience", embeddingService.extractWeaknesses(summary));
+                analyses.add(analysis);
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("analyses", analyses);
+            response.put("success", true);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Erreur lors de l'analyse des CVs", e);
             return ResponseEntity.internalServerError().body(Map.of(
                 "error", "Erreur lors de l'analyse: " + e.getMessage(),
                 "success", false
@@ -117,11 +182,14 @@ public class AIController {
     }
 
     @GetMapping("/health")
-    @Operation(summary = "Vérifier la santé du service", description = "Retourne le statut du service AI")
+    @Operation(summary = "Vérifier la santé du service", description = "Retourne le statut du service AI et d'Ollama")
     public ResponseEntity<Map<String, Object>> health() {
+        boolean ollamaUp = ollamaEmbeddingService.isAvailable();
+
         Map<String, Object> response = new HashMap<>();
         response.put("status", "UP");
         response.put("service", "AI Service");
+        response.put("ollama", ollamaUp ? "UP" : "DOWN");
         response.put("timestamp", System.currentTimeMillis());
         return ResponseEntity.ok(response);
     }

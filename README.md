@@ -196,6 +196,53 @@ L'application est alors accessible sur `http://localhost:4200`.
 
 Chaque microservice expose sa propre documentation Swagger / OpenAPI, accessible individuellement (`http://localhost:<port>/swagger-ui.html`) ou agrégée via l'API Gateway une fois celle-ci configurée.
 
+---
+
+## Test rapide avec Docker
+
+### Lancement des services
+
+```bash
+docker-compose up -d
+```
+
+### Données de test pré-insérées
+
+Les services contiennent déjà des données de test pour faciliter les tests :
+
+**Auth Service (port 8081):**
+- Utilisateur ADMIN : `admin` / `admin123`
+- Utilisateur RECRUTEUR : `recruteur` / `recruteur123`
+
+**Job Service (port 8082):**
+- Job ID 1 : Développeur Java Full Stack (Paris)
+- Job ID 2 : Data Engineer (Lyon)
+- Job ID 3 : DevOps Engineer (Remote)
+
+**Candidate Service (port 8083):**
+- Candidate ID 1 : Jean Dupont (jean.dupont@email.com) - Java Developer
+- Candidate ID 2 : Marie Martin (marie.martin@email.com) - Data Scientist
+
+### Exemples de requêtes API
+
+```bash
+# Login
+curl -X POST http://localhost:8081/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin123"}'
+
+# Récupérer toutes les offres
+curl http://localhost:8082/api/jobs
+
+# Récupérer tous les candidats
+curl http://localhost:8083/api/candidates
+
+# Mettre à jour le statut d'une candidature
+curl -X PUT "http://localhost:8083/api/candidates/application/1/status?status=ENTRETIEN"
+```
+
+Pour plus de détails sur le test des API, consultez [DOCKER_GUIDE.md](./DOCKER_GUIDE.md) et [GUIDE_FONCTIONNEMENT.md](./GUIDE_FONCTIONNEMENT.md).
+
 ## Modélisation
 
 Le dossier [`docs/UML`](./docs/UML) contient :

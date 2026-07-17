@@ -28,9 +28,8 @@ spring:
             key-serializer: org.apache.kafka.common.serialization.StringSerializer
             value-serializer: org.apache.kafka.common.serialization.StringSerializer
     ai:
-        openai:
-            api-key: ${OLLAMA_API_KEY:sk-test}
-            base-url: ${OLLAMA_BASE_URL:http://192.168.1.167:11434}
+        ollama:
+            base-url: ${OLLAMA_BASE_URL:http://host.docker.internal:11434}
             chat:
                 options:
                     model: ${OLLAMA_MODEL:llama3.2}
@@ -40,11 +39,15 @@ spring:
                     model: nomic-embed-text
 
 ollama:
-    base-url: http://192.168.1.167:11434
+    base-url: ${OLLAMA_BASE_URL:http://host.docker.internal:11434}
     model: nomic-embed-text
+    connect-timeout: 10000
+    read-timeout: 300000
 
 server:
     port: 8084
+    tomcat:
+        connection-timeout: 600000
 
 eureka:
     client:

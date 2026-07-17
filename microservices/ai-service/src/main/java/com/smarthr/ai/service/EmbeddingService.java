@@ -18,14 +18,18 @@ public class EmbeddingService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmbeddingService.class);
 
-    @Autowired
-    private OllamaEmbeddingService ollamaEmbeddingService;
-
-    @Autowired(required = false)
-    private ChatClient chatClient;
+    private final OllamaEmbeddingService ollamaEmbeddingService;
+    private final ChatClient chatClient;
+    private final EmbeddingRepository embeddingRepository;
 
     @Autowired
-    private EmbeddingRepository embeddingRepository;
+    public EmbeddingService(OllamaEmbeddingService ollamaEmbeddingService,
+                             EmbeddingRepository embeddingRepository,
+                             ChatClient chatClient) {
+        this.ollamaEmbeddingService = ollamaEmbeddingService;
+        this.embeddingRepository = embeddingRepository;
+        this.chatClient = chatClient;
+    }
 
     public float[] generateEmbedding(String text) {
         try {
@@ -96,11 +100,6 @@ public class EmbeddingService {
     }
 
     public String generateSummary(String cvText, String jobDescription, String jobTitle) {
-        if (chatClient == null) {
-            logger.warn("ChatClient non disponible - retour d'un résumé par défaut");
-            return "Service d'analyse IA non configuré. Veuillez configurer Ollama et les propriétés Spring AI.";
-        }
-
         try {
             String template = """
                 Analyse le CV suivant par rapport à l'offre d'emploi "{jobTitle}".
