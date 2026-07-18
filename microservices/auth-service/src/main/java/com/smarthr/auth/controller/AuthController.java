@@ -64,14 +64,17 @@ public class AuthController {
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
 
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             String token = jwtUtils.generateToken(userDetails);
             String role = userDetails.getAuthorities().iterator().next().getAuthority().replace("ROLE_", "");
 
-            return ResponseEntity.ok(new LoginResponse(token, userDetails.getUsername(), role));
+            User user = userRepository.findByUsername(userDetails.getUsername()).orElse(null);
+            Long userId = user != null ? user.getId() : null;
+
+            return ResponseEntity.ok(new LoginResponse(token, userDetails.getUsername(), role, userId));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Identifiants invalides");
         }

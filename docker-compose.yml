@@ -22,6 +22,18 @@ services:
     networks:
       - hr-network
 
+  # ---- Ollama (LLM local pour l'IA) ----
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - hr-network
+    restart: unless-stopped
+
   # ---- PostgreSQL pour Auth Service ----
   postgres-auth:
     image: postgres:16
@@ -189,14 +201,13 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://discovery-service:8761/eureka/
       SPRING_CLOUD_CONFIG_ENABLED: "false"
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_BASE_URL: http://ollama:11434
       LOGGING_LEVEL_AI: DEBUG
       LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: INFO
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     depends_on:
       - postgres-vector
       - kafka
+      - ollama
       - discovery-service
       - config-service
     networks:
@@ -238,12 +249,12 @@ services:
     networks:
       - hr-network
 
-  # ---- Frontend Test ----
-  frontend-test:
+  # ---- Frontend (React + Vite) ----
+  frontend:
     build:
-      context: ./frontend-test
+      context: ./frontend
       dockerfile: Dockerfile
-    container_name: frontend-test
+    container_name: smart-hr-frontend
     ports:
       - "3000:80"
     depends_on:
@@ -261,3 +272,4 @@ volumes:
   job_data:
   candidate_data:
   vector_data:
+  ollama_data:

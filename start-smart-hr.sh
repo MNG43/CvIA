@@ -1,39 +1,26 @@
 #!/bin/bash
+set -e
 
-echo "🚀 Démarrage de Smart HR Sourcing..."
+echo "🚀 Démarrage de Smart HR Sourcing (Docker Compose)..."
 
-# Démarrer Docker
-cd /home/iamsouane/Projects/smart-hr-sourcing
-docker-compose up -d
-echo "✅ Services Docker démarrés"
+docker compose up -d --build
 
-# Démarrer Discovery
-gnome-terminal --tab --title="Discovery" -- bash -c "cd /home/iamsouane/Projects/smart-hr-sourcing/microservices/discovery-service && ./mvnw spring-boot:run; exec bash" &
-sleep 15
-
-# Démarrer Config
-gnome-terminal --tab --title="Config" -- bash -c "cd /home/iamsouane/Projects/smart-hr-sourcing/microservices/config-service && ./mvnw spring-boot:run; exec bash" &
-sleep 10
-
-# Démarrer Gateway
-gnome-terminal --tab --title="Gateway" -- bash -c "cd /home/iamsouane/Projects/smart-hr-sourcing/microservices/gateway-service && ./mvnw spring-boot:run; exec bash" &
-sleep 10
-
-# Démarrer Auth
-gnome-terminal --tab --title="Auth" -- bash -c "cd /home/iamsouane/Projects/smart-hr-sourcing/microservices/auth-service && ./mvnw spring-boot:run; exec bash" &
-sleep 10
-
-# Démarrer Job
-gnome-terminal --tab --title="Job" -- bash -c "cd /home/iamsouane/Projects/smart-hr-sourcing/microservices/job-service && ./mvnw spring-boot:run; exec bash" &
-sleep 10
-
-# Démarrer Candidate
-gnome-terminal --tab --title="Candidate" -- bash -c "cd /home/iamsouane/Projects/smart-hr-sourcing/microservices/candidate-service && ./mvnw spring-boot:run; exec bash" &
-
-echo "✅ Tous les services sont en cours de démarrage..."
-echo "   Discovery: http://localhost:8761"
-echo "   Gateway:   http://localhost:8080"
-echo "   Auth:      http://localhost:8081"
-echo "   Job:       http://localhost:8082"
-echo "   Candidate: http://localhost:8083"
-echo "   AI:        http://localhost:8084 (Docker)"
+echo ""
+echo "✅ Services en cours de démarrage"
+echo ""
+echo "⏳ Premier démarrage : la compilation Maven des microservices peut prendre plusieurs minutes."
+echo "   Suivez la progression avec : docker compose logs -f"
+echo ""
+echo "🌐 Interfaces :"
+echo "   Frontend  : http://localhost:3000"
+echo "   Gateway   : http://localhost:8080"
+echo "   Eureka    : http://localhost:8761"
+echo ""
+echo "🤖 Pour activer l'IA, téléchargez les modèles Ollama :"
+echo "   docker exec -it ollama ollama pull llama3.2"
+echo "   docker exec -it ollama ollama pull nomic-embed-text"
+echo ""
+echo "👤 Comptes de démonstration :"
+echo "   admin / admin123       (Administrateur)"
+echo "   recruteur / recruteur123 (Recruteur)"
+echo "   candidat / candidat123   (Candidat)"

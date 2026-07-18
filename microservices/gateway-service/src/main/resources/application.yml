@@ -8,16 +8,23 @@ spring:
         locator:
           enabled: true
           lower-case-service-id: true
-      server:
-        webflux:
-          httpclient:
-            connect-timeout: 300000
-            response-timeout: 1800s
+      httpclient:
+        connect-timeout: 300000
+        response-timeout: 1800s
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials RETAIN_UNIQUE
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origin-patterns: "*"
+            allowed-methods: "*"
+            allowed-headers: "*"
+            allow-credentials: true
       routes:
         - id: auth-service
           uri: lb://auth-service
           predicates:
-            - Path=/api/auth/**
+            - Path=/api/auth/**,/api/admin/**
         - id: job-service
           uri: lb://job-service
           predicates:
@@ -40,12 +47,12 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://discovery-service:8761/eureka/
 
 logging:
   level:
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.boot.actuate: DEBUG
+    org.springframework.cloud.gateway: INFO
+    org.springframework.boot.actuate: INFO
 
 management:
   endpoints:

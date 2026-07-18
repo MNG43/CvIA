@@ -82,21 +82,21 @@ Le diagramme d'architecture détaillé et les diagrammes UML (cas d'utilisation,
 - Swagger / OpenAPI
 
 **Frontend**
-- Angular 17, Angular Material
-- Tailwind CSS / Bootstrap
-- Chart.js / ngx-charts
-- Angular CDK (drag & drop)
-- RxJS
+- React 18 + TypeScript + Vite
+- React Router 7
+- Tailwind CSS
+- Recharts (graphiques)
+- Lucide React (icônes)
+- Axios (HTTP)
 
 ## Structure du projet
 
 ```
 smart-hr-sourcing/
-├── docker-compose.yml          # Infrastructure : PostgreSQL, Kafka, ...
+├── docker-compose.yml          # Infrastructure : PostgreSQL, Kafka, Ollama, ...
 ├── docs/
 │   └── UML/                    # Diagrammes de cas d'utilisation et de classes
-├── frontend/
-│   └── smart-hr-ui/            # Application Angular
+├── frontend/                   # Application React + TypeScript + Vite + Tailwind
 ├── microservices/
 │   ├── discovery-service/      # Eureka Server
 │   ├── config-service/         # Spring Cloud Config Server
@@ -166,15 +166,15 @@ cd microservices/notification-service && ./mvnw spring-boot:run
 
 > Astuce : chaque commande est à lancer dans un terminal séparé, ou via le support multi-run de votre IDE (IntelliJ permet de créer une configuration de lancement composite).
 
-### 4. Lancer le frontend Angular
+### 4. Lancer le frontend React
 
 ```bash
-cd frontend/smart-hr-ui
+cd frontend
 npm install
-ng serve
+npm run dev
 ```
 
-L'application est alors accessible sur `http://localhost:4200`.
+L'application est alors accessible sur `http://localhost:5173`.
 
 ## Ports par défaut
 
@@ -188,7 +188,7 @@ L'application est alors accessible sur `http://localhost:4200`.
 | Candidate Service | 8083 |
 | AI / Matching Service | 8084 |
 | Notification Service | 8085 |
-| Frontend Angular | 4200 |
+| Frontend React | 3000 (Docker) / 5173 (dev) |
 | PostgreSQL | 5432 |
 | Kafka | 9092 |
 
@@ -200,7 +200,30 @@ Chaque microservice expose sa propre documentation Swagger / OpenAPI, accessible
 
 ## Test rapide avec Docker
 
-### Lancement des services
+### Lancement complet (frontend + microservices + Ollama)
+
+```bash
+./start-smart-hr.sh
+# ou
+docker compose up -d --build
+```
+
+### Activer l'IA (modèles Ollama)
+
+Une fois les conteneurs démarrés, téléchargez les modèles Ollama utilisés par l'AI Service :
+
+```bash
+docker exec -it ollama ollama pull llama3.2
+docker exec -it ollama ollama pull nomic-embed-text
+```
+
+### Accès
+
+- **Frontend** : http://localhost:3000
+- **Gateway API** : http://localhost:8080
+- **Eureka** : http://localhost:8761
+
+### Lancement des services (legacy)
 
 ```bash
 docker-compose up -d
