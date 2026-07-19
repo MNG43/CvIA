@@ -20,7 +20,6 @@ export const authService = {
     username: string;
     email: string;
     password: string;
-    role: string;
   }) => api.post("/api/auth/register", data).then((r) => r.data),
 };
 

@@ -18,7 +18,4 @@ public class RegisterRequest {
     @NotBlank
     @Size(min = 6)
     private String password;
-
-    @NotBlank
-    private String role;  // "ADMIN" ou "RECRUTEUR"
 }

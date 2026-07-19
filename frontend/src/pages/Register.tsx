@@ -14,7 +14,6 @@ export default function Register() {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "CANDIDAT" as Role,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -39,7 +38,6 @@ export default function Register() {
         username: form.username,
         email: form.email,
         password: form.password,
-        role: form.role,
       });
       toast("Compte créé avec succès. Vous pouvez vous connecter.", "success");
       navigate("/login");
@@ -66,10 +64,10 @@ export default function Register() {
           </Link>
           <div className="card p-8">
             <h1 className="font-display text-2xl font-bold text-slate-900">
-              Créer un compte
+              Créer un compte candidat
             </h1>
             <p className="mt-2 text-sm text-slate-500">
-              Choisissez votre rôle pour accéder à l'espace correspondant.
+              Créez votre compte candidat pour postuler aux offres d'emploi.
             </p>
 
             <form onSubmit={submit} className="mt-6 space-y-4">
@@ -106,29 +104,6 @@ export default function Register() {
                     onChange={(e) => set("email", e.target.value)}
                     required
                   />
-                </div>
-              </div>
-              <div>
-                <label className="label">Rôle</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(["CANDIDAT", "RECRUTEUR", "ADMIN"] as Role[]).map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => set("role", r)}
-                      className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition ${
-                        form.role === r
-                          ? "border-primary-500 bg-primary-50 text-primary-700"
-                          : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                      }`}
-                    >
-                      {r === "CANDIDAT"
-                        ? "Candidat"
-                        : r === "RECRUTEUR"
-                        ? "Recruteur"
-                        : "Admin"}
-                    </button>
-                  ))}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">

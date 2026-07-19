@@ -42,12 +42,8 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Email déjà utilisé");
         }
 
-        Role role;
-        try {
-            role = Role.valueOf(request.getRole().toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Rôle invalide : " + request.getRole());
-        }
+        // Force le rôle à CANDIDAT pour les inscriptions publiques
+        Role role = Role.CANDIDAT;
 
         User user = User.builder()
                 .username(request.getUsername())

@@ -1,6 +1,6 @@
 package com.smarthr.auth.controller;
 
-import com.smarthr.auth.dto.request.RegisterRequest;
+import com.smarthr.auth.dto.request.CreateUserRequest;
 import com.smarthr.auth.dto.request.UpdateUserRequest;
 import com.smarthr.auth.dto.response.UserResponse;
 import com.smarthr.auth.entity.User;
@@ -41,7 +41,7 @@ public class AdminController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createUser(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<?> createUser(@Valid @RequestBody CreateUserRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             return ResponseEntity.badRequest().body(Map.of("message", "Username déjà utilisé"));
         }
