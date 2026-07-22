@@ -30,9 +30,22 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_NUM_THREAD=8
+      - OLLAMA_LOAD_TIMEOUT=300
+      - OLLAMA_REQUEST_TIMEOUT=600
+      - OLLAMA_KEEP_ALIVE=5m
     networks:
       - hr-network
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '2'
+          memory: 4G
 
   # ---- PostgreSQL pour Auth Service ----
   postgres-auth:

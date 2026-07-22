@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Briefcase, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Briefcase, Pencil, Plus, Trash2, X, Brain, Settings } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useJobs } from "../../hooks/useJobs";
 import { jobService } from "../../api/services";
@@ -11,6 +11,7 @@ import { ErrorBanner } from "../../components/ErrorBanner";
 import { Modal, ConfirmDialog } from "../../components/Modal";
 import { Spinner } from "../../components/Spinner";
 import type { JobOffer, JobOfferRequest } from "../../types";
+import PipelineCriteriaManager from "./PipelineCriteriaManager";
 
 const empty: JobOfferRequest = {
   title: "",
@@ -23,6 +24,8 @@ const empty: JobOfferRequest = {
   createdBy: 0,
 };
 
+const FORM_STORAGE_KEY = "job_form_draft";
+
 export default function RecruiterJobs() {
   const { user } = useAuth();
   const { jobs, loading, error, refresh } = useJobs(user?.userId);
@@ -34,10 +37,49 @@ export default function RecruiterJobs() {
   const [skillInput, setSkillInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [analyzing, setAnalyzing] = useState<number | null>(null);
+  const [pipelineManagerOpen, setPipelineManagerOpen] = useState(false);
+  const [selectedJobForPipeline, setSelectedJobForPipeline] = useState<number | null>(null);
+
+  // Load form data from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(FORM_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setForm(parsed);
+      } catch (e) {
+        console.error("Error loading saved form:", e);
+      }
+    }
+  }, []);
+
+  // Save form data to localStorage whenever form changes
+  useEffect(() => {
+    if (form.title || form.description || form.requiredSkills.length > 0) {
+      localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(form));
+    }
+  }, [form]);
+
+  const clearSavedForm = () => {
+    localStorage.removeItem(FORM_STORAGE_KEY);
+  };
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ ...empty, createdBy: user?.userId || 0 });
+    // Load saved form data if exists, otherwise use empty form
+    const saved = localStorage.getItem(FORM_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setForm({ ...parsed, createdBy: user?.userId || 0 });
+      } catch (e) {
+        console.error("Error loading saved form:", e);
+        setForm({ ...empty, createdBy: user?.userId || 0 });
+      }
+    } else {
+      setForm({ ...empty, createdBy: user?.userId || 0 });
+    }
     setSkillInput("");
     setOpen(true);
   };
@@ -56,6 +98,11 @@ export default function RecruiterJobs() {
     });
     setSkillInput("");
     setOpen(true);
+  };
+
+  const openPipelineManager = (jobId: number) => {
+    setSelectedJobForPipeline(jobId);
+    setPipelineManagerOpen(true);
   };
 
   const addSkill = () => {
@@ -86,6 +133,7 @@ export default function RecruiterJobs() {
       } else {
         await jobService.create(form);
         toast("Offre publiée avec succès.", "success");
+        clearSavedForm();
       }
       setOpen(false);
       refresh();
@@ -93,6 +141,29 @@ export default function RecruiterJobs() {
       toast(err.response?.data?.message || "Erreur lors de l'enregistrement", "error");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const analyzePosition = async (jobId: number) => {
+    setAnalyzing(jobId);
+    try {
+      const response = await fetch(`http://localhost:8080/api/candidates/pipeline/analyze-position/${jobId}?threshold=65.0`, {
+        method: 'POST',
+      });
+      if (response.ok) {
+        const applications = await response.json();
+        toast(`${applications.length} candidats qualifiés (≥65%) transmis à la pré-sélection`, "success");
+        refresh();
+      } else {
+        const errorText = await response.text();
+        console.error("Analysis error:", errorText);
+        toast(`Erreur lors de l'analyse du poste: ${errorText}`, "error");
+      }
+    } catch (err) {
+      console.error("Analysis error:", err);
+      toast("Erreur lors de l'analyse du poste", "error");
+    } finally {
+      setAnalyzing(null);
     }
   };
 
@@ -151,6 +222,24 @@ export default function RecruiterJobs() {
                     onClick={() => openEdit(job)}
                   >
                     <Pencil size={14} /> Modifier
+                  </button>
+                  <button
+                    className="btn-secondary"
+                    onClick={() => openPipelineManager(job.id)}
+                  >
+                    <Settings size={14} /> Pipeline
+                  </button>
+                  <button
+                    className="btn-primary"
+                    onClick={() => analyzePosition(job.id)}
+                    disabled={analyzing === job.id}
+                  >
+                    {analyzing === job.id ? (
+                      <Spinner className="h-4 w-4" />
+                    ) : (
+                      <Brain size={14} />
+                    )}
+                    Analyse IA
                   </button>
                   <button
                     className="btn-danger"
@@ -315,6 +404,12 @@ export default function RecruiterJobs() {
         confirmLabel="Supprimer"
         onConfirm={confirmDelete}
         onCancel={() => setDeleteId(null)}
+      />
+
+      <PipelineCriteriaManager
+        jobId={selectedJobForPipeline || 0}
+        open={pipelineManagerOpen}
+        onClose={() => setPipelineManagerOpen(false)}
       />
     </div>
   );

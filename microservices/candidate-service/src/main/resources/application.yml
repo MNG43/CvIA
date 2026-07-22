@@ -21,9 +21,12 @@ feign:
     client:
         config:
             default:
-                connectTimeout: 5000
-                readTimeout: 5000
+                connectTimeout: 30000
+                readTimeout: 600000
                 loggerLevel: basic
+            ai-service:
+                connectTimeout: 30000
+                readTimeout: 600000
     httpclient:
         enabled: true
         max-connections: 200
@@ -40,4 +43,8 @@ eureka:
 # Fichier: src/main/resources/application.yml (ajouter à la fin)
 job:
     service:
-        url: http://localhost:8081 # URL du Job Service
+        url: http://job-service:8082 # URL du Job Service
+
+ai:
+    service:
+        url: http://ai-service:8084 # URL du AI Service
