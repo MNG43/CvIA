@@ -1,2 +1,5 @@
 node_modules/
 .env
+/microservices/candidate-service/src/main/java/com/smarthr/candidate/entity/PipelineCriteria.java
+/frontend/src/pages/recruiter/PipelineCriteriaManager.tsx
+/microservices/candidate-service/src/main/java/com/smarthr/candidate/repository/PipelineCriteriaRepository.java

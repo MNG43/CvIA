@@ -181,6 +181,8 @@ services:
     build:
       context: ./microservices/candidate-service
       dockerfile: Dockerfile
+      args:
+        MAVEN_OPTS: -Xmx1024m -Xms512m
     container_name: candidate-service
     ports:
       - "8083:8083"
@@ -198,12 +200,20 @@ services:
       - config-service
     networks:
       - hr-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   # ---- AI Service ----
   ai-service:
     build:
       context: ./microservices/ai-service
       dockerfile: Dockerfile
+      args:
+        MAVEN_OPTS: -Xmx1024m -Xms512m
     container_name: ai-service
     ports:
       - "8084:8084"
@@ -225,6 +235,12 @@ services:
       - config-service
     networks:
       - hr-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   # ---- Notification Service ----
   notification-service:
