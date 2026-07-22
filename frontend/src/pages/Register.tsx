@@ -4,12 +4,13 @@ import { ArrowLeft, ArrowRight, Lock, Mail, User as UserIcon } from "lucide-reac
 import { useToast } from "../context/ToastContext";
 import { authService } from "../api/services";
 import { Spinner } from "../components/Spinner";
+import { useFormDraft } from "../hooks/useFormDraft";
 import type { Role } from "../types";
 
 export default function Register() {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [form, setForm] = useState({
+  const [form, setForm, clearForm] = useFormDraft("register_form_draft", {
     username: "",
     email: "",
     password: "",
@@ -40,6 +41,7 @@ export default function Register() {
         password: form.password,
       });
       toast("Compte créé avec succès. Vous pouvez vous connecter.", "success");
+      clearForm();
       navigate("/login");
     } catch (err: any) {
       const msg =

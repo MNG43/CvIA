@@ -5,13 +5,16 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { authService } from "../api/services";
 import { Spinner } from "../components/Spinner";
+import { useFormDraft } from "../hooks/useFormDraft";
 
 export default function Login() {
   const { login } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [form, setForm, clearForm] = useFormDraft("login_form_draft", {
+    username: "",
+    password: "",
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -20,7 +23,7 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      const data = await authService.login(username, password);
+      const data = await authService.login(form.username, form.password);
       login(data);
       toast(`Bienvenue ${data.username} !`, "success");
       const home =
@@ -114,8 +117,8 @@ export default function Login() {
                   <input
                     className="input pl-10"
                     placeholder="admin"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    value={form.username}
+                    onChange={(e) => setForm({ ...form, username: e.target.value })}
                     required
                     autoFocus
                   />
@@ -132,8 +135,8 @@ export default function Login() {
                     type="password"
                     className="input pl-10"
                     placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
                     required
                   />
                 </div>

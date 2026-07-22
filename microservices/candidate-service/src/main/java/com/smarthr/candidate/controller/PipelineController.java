@@ -63,16 +63,16 @@ public class PipelineController {
     public ResponseEntity<List<Application>> analyzePosition(
             @PathVariable Long jobId,
             @RequestParam(defaultValue = "65.0") Double threshold) {
-        // Get applications above threshold (using existing matching scores)
-        List<Application> qualifiedApplications = pipelineService.getApplicationsAboveThreshold(jobId, threshold);
-        
-        // Auto-advance qualified applications to PRE_SELECTION
+        // Run full AI analysis (embeddings + similarity) for applications without scores,
+        // then return applications above threshold and auto-advance them to PRE_SELECTION.
+        List<Application> qualifiedApplications = pipelineService.analyzePositionWithAI(jobId, threshold);
+
         for (Application app : qualifiedApplications) {
             if (app.getStatus() == ApplicationStatus.CV_RECUS) {
                 pipelineService.autoAdvanceToNextStage(app.getId());
             }
         }
-        
+
         return ResponseEntity.ok(qualifiedApplications);
     }
 }

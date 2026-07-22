@@ -90,6 +90,16 @@ export const candidateService = {
         `/api/candidates/application/${applicationId}/status?status=${status}`
       )
       .then((r) => r.data),
+  analyzePosition: (jobId: number, threshold = 65) =>
+    api
+      .post<Application[]>(
+        `/api/candidates/pipeline/analyze-position/${jobId}?threshold=${threshold}`
+      )
+      .then((r) => r.data),
+  getPipelineApplications: (jobId: number) =>
+    api
+      .get<Application[]>(`/api/candidates/pipeline/job/${jobId}`)
+      .then((r) => r.data),
 };
 
 // ===== AI =====

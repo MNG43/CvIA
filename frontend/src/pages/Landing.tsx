@@ -86,27 +86,27 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-slate-100 bg-white/80 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-surface-100 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 lg:px-8">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white font-bold text-lg">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary-600 to-accent-500 text-white font-bold text-lg shadow-lg shadow-primary-600/20">
               S
             </div>
             <div>
-              <p className="font-display text-base font-bold text-slate-900 leading-none">
+              <p className="font-display text-base font-bold text-surface-900 leading-none">
                 Smart HR
               </p>
-              <p className="text-[11px] text-slate-500">Sourcing</p>
+              <p className="text-[11px] text-surface-500">Sourcing</p>
             </div>
           </Link>
           <nav className="hidden items-center gap-8 md:flex">
-            <a href="#features" className="text-sm font-medium text-slate-600 hover:text-slate-900">
+            <a href="#features" className="text-sm font-medium text-surface-600 hover:text-surface-900 transition-colors">
               Fonctionnalités
             </a>
-            <a href="#process" className="text-sm font-medium text-slate-600 hover:text-slate-900">
-              Fonctionnement
+            <a href="#process" className="text-sm font-medium text-surface-600 hover:text-surface-900 transition-colors">
+ Fonctionnement
             </a>
-            <a href="#roles" className="text-sm font-medium text-slate-600 hover:text-slate-900">
+            <a href="#roles" className="text-sm font-medium text-surface-600 hover:text-surface-900 transition-colors">
               Rôles
             </a>
           </nav>
@@ -134,20 +134,21 @@ export default function Landing() {
         <div className="absolute inset-0 -z-10">
           <div className="absolute -top-24 left-1/2 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-primary-100/60 blur-3xl" />
           <div className="absolute top-40 right-0 h-96 w-96 rounded-full bg-accent-100/50 blur-3xl" />
+          <div className="absolute bottom-0 left-0 h-72 w-72 rounded-full bg-primary-200/40 blur-3xl" />
         </div>
         <div className="mx-auto max-w-7xl px-4 py-20 lg:px-8 lg:py-28">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary-200 bg-primary-50 px-4 py-1.5 text-sm font-medium text-primary-700">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary-200 bg-primary-50 px-4 py-1.5 text-sm font-medium text-primary-700 animate-fade-in">
               <Sparkles size={16} />
               Recruteur virtuel & analyseur intelligent de CV
             </div>
-            <h1 className="font-display text-4xl font-extrabold leading-tight text-slate-900 sm:text-5xl lg:text-6xl">
+            <h1 className="font-display text-4xl font-extrabold leading-tight text-surface-900 sm:text-5xl lg:text-6xl animate-slide-up">
               La plateforme de recrutement{" "}
-              <span className="bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
+              <span className="text-gradient">
                 propulsée par l'IA
               </span>
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600">
+            <p className="mx-auto mt-6 max-w-2xl text-lg text-surface-600 animate-slide-up">
               Publiez vos offres, recevez les CV, laissez l'intelligence artificielle
               extraire, scorer et résumer chaque profil. Suivez le pipeline de
               recrutement de bout en bout.
@@ -166,7 +167,7 @@ export default function Landing() {
                 J'ai déjà un compte
               </Link>
             </div>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-500">
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-surface-500">
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 size={16} className="text-accent-600" /> 3 rôles
               </span>
@@ -182,13 +183,13 @@ export default function Landing() {
       </section>
 
       {/* Features */}
-      <section id="features" className="border-t border-slate-100 bg-slate-50 py-20">
+      <section id="features" className="border-t border-surface-100 bg-surface-50 py-20">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-display text-3xl font-bold text-slate-900 sm:text-4xl">
+            <h2 className="font-display text-3xl font-bold text-surface-900 sm:text-4xl">
               Tout ce qu'il faut pour recruter intelligemment
             </h2>
-            <p className="mt-4 text-lg text-slate-600">
+            <p className="mt-4 text-lg text-surface-600">
               Une suite complète couvrant l'offre, la candidature, l'analyse IA et le
               suivi du pipeline.
             </p>
@@ -199,13 +200,13 @@ export default function Landing() {
               return (
                 <div
                   key={f.title}
-                  className="card p-6 transition hover:shadow-md hover:-translate-y-0.5"
+                  className="card-hover p-6"
                 >
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 text-primary-600 transition-transform group-hover:scale-110">
                     <Icon size={24} />
                   </div>
-                  <h3 className="text-lg font-semibold text-slate-900">{f.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                  <h3 className="text-lg font-semibold text-surface-900">{f.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-surface-600">
                     {f.description}
                   </p>
                 </div>
@@ -219,24 +220,24 @@ export default function Landing() {
       <section id="process" className="py-20">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-display text-3xl font-bold text-slate-900 sm:text-4xl">
+            <h2 className="font-display text-3xl font-bold text-surface-900 sm:text-4xl">
               Comment ça marche
             </h2>
-            <p className="mt-4 text-lg text-slate-600">
+            <p className="mt-4 text-lg text-surface-600">
               De la publication de l'offre au recrutement final.
             </p>
           </div>
           <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {steps.map((s) => (
               <div key={s.n} className="relative">
-                <div className="card h-full p-6">
+                <div className="card-hover h-full p-6">
                   <span className="font-display text-3xl font-bold text-primary-200">
                     {s.n}
                   </span>
-                  <h3 className="mt-3 text-base font-semibold text-slate-900">
+                  <h3 className="mt-3 text-base font-semibold text-surface-900">
                     {s.title}
                   </h3>
-                  <p className="mt-2 text-sm text-slate-600">{s.description}</p>
+                  <p className="mt-2 text-sm text-surface-600">{s.description}</p>
                 </div>
               </div>
             ))}
@@ -245,13 +246,13 @@ export default function Landing() {
       </section>
 
       {/* Roles */}
-      <section id="roles" className="border-t border-slate-100 bg-slate-50 py-20">
+      <section id="roles" className="border-t border-surface-100 bg-surface-50 py-20">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="font-display text-3xl font-bold text-slate-900 sm:text-4xl">
+            <h2 className="font-display text-3xl font-bold text-surface-900 sm:text-4xl">
               Trois rôles, trois espaces dédiés
             </h2>
-            <p className="mt-4 text-lg text-slate-600">
+            <p className="mt-4 text-lg text-surface-600">
               Chaque utilisateur dispose d'une interface adaptée à son métier.
             </p>
           </div>
@@ -315,18 +316,18 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-100 bg-white py-10">
+      <footer className="border-t border-surface-100 bg-white py-10">
         <div className="mx-auto max-w-7xl px-4 lg:px-8">
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-600 text-white font-bold">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary-600 to-accent-500 text-white font-bold">
                 S
               </div>
-              <span className="font-display text-sm font-bold text-slate-900">
+              <span className="font-display text-sm font-bold text-surface-900">
                 Smart HR Sourcing
               </span>
             </div>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-surface-500">
               Projet académique JEE — Architecture microservices + IA locale
             </p>
           </div>
@@ -355,15 +356,15 @@ function RoleCard({
     accent: "bg-accent-50 text-accent-600",
   };
   return (
-    <div className="card p-8 transition hover:shadow-md">
+    <div className="card-hover p-8">
       <div className={`mb-5 flex h-14 w-14 items-center justify-center rounded-2xl ${colors[color]}`}>
         <Icon size={28} />
       </div>
-      <h3 className="text-xl font-semibold text-slate-900">{title}</h3>
-      <p className="mt-3 text-sm leading-relaxed text-slate-600">{desc}</p>
+      <h3 className="text-xl font-semibold text-surface-900">{title}</h3>
+      <p className="mt-3 text-sm leading-relaxed text-surface-600">{desc}</p>
       <ul className="mt-5 space-y-2">
         {points.map((p) => (
-          <li key={p} className="flex items-center gap-2 text-sm text-slate-700">
+          <li key={p} className="flex items-center gap-2 text-sm text-surface-700">
             <CheckCircle2 size={16} className={colors[color]} />
             {p}
           </li>

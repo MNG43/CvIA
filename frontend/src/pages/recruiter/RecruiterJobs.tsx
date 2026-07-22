@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
-import { Briefcase, Pencil, Plus, Trash2, X, Brain, Settings } from "lucide-react";
+import { useState } from "react";
+import { Briefcase, Pencil, Plus, Trash2, X, Brain, Sparkles, Trophy, CircleAlert as AlertCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useJobs } from "../../hooks/useJobs";
-import { jobService } from "../../api/services";
+import { jobService, candidateService } from "../../api/services";
 import { useToast } from "../../context/ToastContext";
 import { JobCard } from "../../components/JobCard";
 import { InlineLoader } from "../../components/Spinner";
@@ -10,8 +10,8 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorBanner } from "../../components/ErrorBanner";
 import { Modal, ConfirmDialog } from "../../components/Modal";
 import { Spinner } from "../../components/Spinner";
-import type { JobOffer, JobOfferRequest } from "../../types";
-import PipelineCriteriaManager from "./PipelineCriteriaManager";
+import { useFormDraft } from "../../hooks/useFormDraft";
+import type { JobOffer, JobOfferRequest, Application } from "../../types";
 
 const empty: JobOfferRequest = {
   title: "",
@@ -24,7 +24,10 @@ const empty: JobOfferRequest = {
   createdBy: 0,
 };
 
-const FORM_STORAGE_KEY = "job_form_draft";
+interface AnalysisResult {
+  applications: Application[];
+  threshold: number;
+}
 
 export default function RecruiterJobs() {
   const { user } = useAuth();
@@ -33,53 +36,17 @@ export default function RecruiterJobs() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<JobOffer | null>(null);
-  const [form, setForm] = useState<JobOfferRequest>(empty);
+  const [form, setForm] = useFormDraft<JobOfferRequest>("job_form_draft", empty);
   const [skillInput, setSkillInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [analyzing, setAnalyzing] = useState<number | null>(null);
-  const [pipelineManagerOpen, setPipelineManagerOpen] = useState(false);
-  const [selectedJobForPipeline, setSelectedJobForPipeline] = useState<number | null>(null);
-
-  // Load form data from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem(FORM_STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setForm(parsed);
-      } catch (e) {
-        console.error("Error loading saved form:", e);
-      }
-    }
-  }, []);
-
-  // Save form data to localStorage whenever form changes
-  useEffect(() => {
-    if (form.title || form.description || form.requiredSkills.length > 0) {
-      localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(form));
-    }
-  }, [form]);
-
-  const clearSavedForm = () => {
-    localStorage.removeItem(FORM_STORAGE_KEY);
-  };
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [analysisJobTitle, setAnalysisJobTitle] = useState("");
 
   const openCreate = () => {
     setEditing(null);
-    // Load saved form data if exists, otherwise use empty form
-    const saved = localStorage.getItem(FORM_STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setForm({ ...parsed, createdBy: user?.userId || 0 });
-      } catch (e) {
-        console.error("Error loading saved form:", e);
-        setForm({ ...empty, createdBy: user?.userId || 0 });
-      }
-    } else {
-      setForm({ ...empty, createdBy: user?.userId || 0 });
-    }
+    setForm({ ...empty, createdBy: user?.userId || 0 });
     setSkillInput("");
     setOpen(true);
   };
@@ -98,11 +65,6 @@ export default function RecruiterJobs() {
     });
     setSkillInput("");
     setOpen(true);
-  };
-
-  const openPipelineManager = (jobId: number) => {
-    setSelectedJobForPipeline(jobId);
-    setPipelineManagerOpen(true);
   };
 
   const addSkill = () => {
@@ -133,7 +95,7 @@ export default function RecruiterJobs() {
       } else {
         await jobService.create(form);
         toast("Offre publiée avec succès.", "success");
-        clearSavedForm();
+        setForm({ ...empty, createdBy: user?.userId || 0 });
       }
       setOpen(false);
       refresh();
@@ -144,24 +106,23 @@ export default function RecruiterJobs() {
     }
   };
 
-  const analyzePosition = async (jobId: number) => {
-    setAnalyzing(jobId);
+  const analyzePosition = async (job: JobOffer) => {
+    setAnalyzing(job.id);
+    setAnalysisJobTitle(job.title);
     try {
-      const response = await fetch(`http://localhost:8080/api/candidates/pipeline/analyze-position/${jobId}?threshold=65.0`, {
-        method: 'POST',
-      });
-      if (response.ok) {
-        const applications = await response.json();
-        toast(`${applications.length} candidats qualifiés (≥65%) transmis à la pré-sélection`, "success");
-        refresh();
-      } else {
-        const errorText = await response.text();
-        console.error("Analysis error:", errorText);
-        toast(`Erreur lors de l'analyse du poste: ${errorText}`, "error");
-      }
-    } catch (err) {
-      console.error("Analysis error:", err);
-      toast("Erreur lors de l'analyse du poste", "error");
+      const applications = await candidateService.analyzePosition(job.id, 65);
+      setAnalysisResult({ applications, threshold: 65 });
+      toast(
+        `${applications.length} candidat(s) qualifié(s) (≥65%) transmis à la pré-sélection`,
+        "success"
+      );
+      refresh();
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.response?.data || err.message;
+      toast(
+        `Erreur lors de l'analyse: ${typeof msg === "string" ? msg : "échec de l'analyse IA"}`,
+        "error"
+      );
     } finally {
       setAnalyzing(null);
     }
@@ -184,8 +145,8 @@ export default function RecruiterJobs() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-slate-900">Mes offres</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="font-display text-2xl font-bold text-surface-900">Mes offres</h1>
+          <p className="mt-1 text-sm text-surface-500">
             Créez, modifiez et supprimez vos offres d'emploi.
           </p>
         </div>
@@ -216,22 +177,13 @@ export default function RecruiterJobs() {
               key={job.id}
               job={job}
               action={
-                <div className="flex gap-2">
-                  <button
-                    className="btn-secondary"
-                    onClick={() => openEdit(job)}
-                  >
+                <div className="flex flex-wrap gap-2">
+                  <button className="btn-secondary" onClick={() => openEdit(job)}>
                     <Pencil size={14} /> Modifier
                   </button>
                   <button
-                    className="btn-secondary"
-                    onClick={() => openPipelineManager(job.id)}
-                  >
-                    <Settings size={14} /> Pipeline
-                  </button>
-                  <button
-                    className="btn-primary"
-                    onClick={() => analyzePosition(job.id)}
+                    className="btn-accent"
+                    onClick={() => analyzePosition(job)}
                     disabled={analyzing === job.id}
                   >
                     {analyzing === job.id ? (
@@ -241,10 +193,7 @@ export default function RecruiterJobs() {
                     )}
                     Analyse IA
                   </button>
-                  <button
-                    className="btn-danger"
-                    onClick={() => setDeleteId(job.id)}
-                  >
+                  <button className="btn-danger" onClick={() => setDeleteId(job.id)}>
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -279,9 +228,7 @@ export default function RecruiterJobs() {
                 className="input min-h-[120px]"
                 required
                 value={form.description}
-                onChange={(e) =>
-                  setForm({ ...form, description: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
                 placeholder="Décrivez le poste, les missions, l'environnement..."
               />
             </div>
@@ -290,9 +237,7 @@ export default function RecruiterJobs() {
               <select
                 className="input"
                 value={form.experienceLevel}
-                onChange={(e) =>
-                  setForm({ ...form, experienceLevel: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, experienceLevel: e.target.value })}
               >
                 <option value="">Non spécifié</option>
                 <option>Junior</option>
@@ -306,9 +251,7 @@ export default function RecruiterJobs() {
               <select
                 className="input"
                 value={form.contractType}
-                onChange={(e) =>
-                  setForm({ ...form, contractType: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, contractType: e.target.value })}
               >
                 <option>CDI</option>
                 <option>CDD</option>
@@ -377,11 +320,7 @@ export default function RecruiterJobs() {
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => setOpen(false)}
-            >
+            <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>
               Annuler
             </button>
             <button type="submit" disabled={submitting} className="btn-primary">
@@ -406,11 +345,94 @@ export default function RecruiterJobs() {
         onCancel={() => setDeleteId(null)}
       />
 
-      <PipelineCriteriaManager
-        jobId={selectedJobForPipeline || 0}
-        open={pipelineManagerOpen}
-        onClose={() => setPipelineManagerOpen(false)}
-      />
+      {/* Analysis results modal */}
+      <Modal
+        open={analysisResult !== null}
+        onClose={() => setAnalysisResult(null)}
+        title={`Résultats de l'analyse IA — ${analysisJobTitle}`}
+        size="lg"
+      >
+        {analysisResult && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 rounded-xl bg-accent-50 p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-100 text-accent-700">
+                <Sparkles size={20} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-surface-900">
+                  {analysisResult.applications.length} candidat(s) qualifié(s)
+                </p>
+                <p className="text-xs text-surface-600">
+                  Score de compatibilité ≥ {analysisResult.threshold}%. Les candidats
+                  ont été automatiquement déplacés en pré-sélection.
+                </p>
+              </div>
+            </div>
+
+            {analysisResult.applications.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 py-8 text-center">
+                <AlertCircle size={32} className="text-surface-400" />
+                <p className="text-sm text-surface-600">
+                  Aucun candidat n'a atteint le seuil de {analysisResult.threshold}%.
+                  Assurez-vous que des candidats ont déjà uploadé leur CV pour cette
+                  offre.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {analysisResult.applications
+                  .slice()
+                  .sort((a, b) => (b.matchingScore ?? 0) - (a.matchingScore ?? 0))
+                  .map((app, i) => (
+                    <div
+                      key={app.id}
+                      className="flex items-center justify-between rounded-xl border border-surface-200 bg-white p-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${
+                            i === 0
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-surface-100 text-surface-700"
+                          }`}
+                        >
+                          {i === 0 ? <Trophy size={16} /> : i + 1}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-surface-900">
+                            Candidat #{app.candidateId}
+                          </p>
+                          <p className="text-xs text-surface-500">
+                            Candidature #{app.id}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span
+                          className={`badge ${
+                            (app.matchingScore ?? 0) >= 80
+                              ? "bg-accent-100 text-accent-700"
+                              : "bg-primary-100 text-primary-700"
+                          }`}
+                        >
+                          {app.matchingScore != null
+                            ? `${app.matchingScore.toFixed(1)}%`
+                            : "N/A"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2">
+              <button className="btn-primary" onClick={() => setAnalysisResult(null)}>
+                Fermer
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

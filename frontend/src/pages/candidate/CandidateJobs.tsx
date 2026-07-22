@@ -9,6 +9,7 @@ import { Modal } from "../../components/Modal";
 import { useToast } from "../../context/ToastContext";
 import { candidateService } from "../../api/services";
 import { Spinner } from "../../components/Spinner";
+import { useFormDraft } from "../../hooks/useFormDraft";
 import type { JobOffer } from "../../types";
 
 export default function CandidateJobs() {
@@ -17,7 +18,7 @@ export default function CandidateJobs() {
   const [contract, setContract] = useState("");
   const [selected, setSelected] = useState<JobOffer | null>(null);
   const [applyOpen, setApplyOpen] = useState(false);
-  const [form, setForm] = useState({
+  const [form, setForm, clearForm] = useFormDraft("apply_form_draft", {
     firstName: "",
     lastName: "",
     email: "",
@@ -46,8 +47,6 @@ export default function CandidateJobs() {
   const openApply = (job: JobOffer) => {
     setSelected(job);
     setApplyOpen(true);
-    setForm({ firstName: "", lastName: "", email: "", phone: "" });
-    setFile(null);
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -68,6 +67,8 @@ export default function CandidateJobs() {
       );
       toast("Candidature envoyée avec succès !", "success");
       setApplyOpen(false);
+      clearForm();
+      setFile(null);
       refresh();
     } catch (err: any) {
       toast(err.response?.data?.message || "Erreur lors de l'envoi", "error");

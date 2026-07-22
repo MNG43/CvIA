@@ -51,9 +51,9 @@ const navByRole: Record<"ADMIN" | "RECRUTEUR" | "CANDIDAT", { title: string; ite
 };
 
 const roleBadge: Record<string, { label: string; cls: string }> = {
-  ADMIN: { label: "Administrateur", cls: "bg-red-100 text-red-700" },
-  RECRUTEUR: { label: "Recruteur", cls: "bg-primary-100 text-primary-700" },
-  CANDIDAT: { label: "Candidat", cls: "bg-accent-100 text-accent-700" },
+  ADMIN: { label: "Administrateur", cls: "bg-red-500/20 text-red-300" },
+  RECRUTEUR: { label: "Recruteur", cls: "bg-primary-500/20 text-primary-300" },
+  CANDIDAT: { label: "Candidat", cls: "bg-accent-500/20 text-accent-300" },
 };
 
 export default function DashboardLayout() {
@@ -77,43 +77,43 @@ export default function DashboardLayout() {
       : location.pathname.startsWith(to);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-surface-50">
       {/* Sidebar mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/40 lg:hidden"
+          className="fixed inset-0 z-40 bg-surface-950/60 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform border-r border-slate-200 bg-white transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-surface-950 transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-16 items-center justify-between border-b border-slate-200 px-5">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-600 text-white font-bold">
+        <div className="flex h-16 items-center justify-between border-b border-white/10 px-5">
+          <Link to="/" className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 text-white font-bold shadow-lg shadow-primary-500/20">
               S
             </div>
             <div>
-              <p className="font-display text-sm font-bold text-slate-900 leading-none">
+              <p className="font-display text-sm font-bold text-white leading-none">
                 Smart HR
               </p>
-              <p className="text-[11px] text-slate-500">Sourcing</p>
+              <p className="text-[11px] text-surface-400">Sourcing</p>
             </div>
           </Link>
           <button
-            className="lg:hidden text-slate-500"
+            className="text-surface-400 hover:text-white lg:hidden"
             onClick={() => setSidebarOpen(false)}
           >
             <X size={20} />
           </button>
         </div>
 
-        <div className="px-4 py-5">
-          <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <div className="sidebar-scroll px-4 py-5 overflow-y-auto" style={{ maxHeight: "calc(100vh - 4rem - 116px)" }}>
+          <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-wider text-surface-500">
             {config.title}
           </p>
           <nav className="space-y-1">
@@ -125,11 +125,7 @@ export default function DashboardLayout() {
                   key={item.to}
                   to={item.to}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-                    active
-                      ? "bg-primary-50 text-primary-700"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
+                  className={active ? "sidebar-item-active" : "sidebar-item"}
                 >
                   <Icon size={18} />
                   {item.label}
@@ -139,13 +135,13 @@ export default function DashboardLayout() {
           </nav>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 border-t border-slate-200 p-4">
+        <div className="absolute bottom-0 left-0 right-0 border-t border-white/10 p-4">
           <div className="mb-3 flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-accent-500 text-sm font-semibold text-white">
               {user.username.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-900">
+              <p className="truncate text-sm font-medium text-white">
                 {user.username}
               </p>
               <span className={`badge mt-0.5 ${badge.cls}`}>{badge.label}</span>
@@ -153,7 +149,7 @@ export default function DashboardLayout() {
           </div>
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-surface-400 transition hover:bg-white/5 hover:text-white"
           >
             <LogOut size={18} />
             Déconnexion
@@ -163,14 +159,14 @@ export default function DashboardLayout() {
 
       {/* Main content */}
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur lg:px-8">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-surface-200 bg-white/80 px-4 backdrop-blur lg:px-8">
           <button
-            className="lg:hidden text-slate-600"
+            className="text-surface-600 lg:hidden"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu size={22} />
           </button>
-          <p className="hidden text-sm text-slate-500 lg:block">
+          <p className="hidden text-sm text-surface-500 lg:block">
             {new Date().toLocaleDateString("fr-FR", {
               weekday: "long",
               day: "numeric",
@@ -179,10 +175,10 @@ export default function DashboardLayout() {
             })}
           </p>
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-slate-700">
+            <span className="text-sm font-medium text-surface-700">
               {user.username}
             </span>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-100 text-sm font-semibold text-primary-700">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-accent-500 text-sm font-semibold text-white">
               {user.username.charAt(0).toUpperCase()}
             </div>
           </div>

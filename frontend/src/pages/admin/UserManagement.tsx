@@ -8,6 +8,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorBanner } from "../../components/ErrorBanner";
 import { Modal, ConfirmDialog } from "../../components/Modal";
 import { Spinner } from "../../components/Spinner";
+import { useFormDraft } from "../../hooks/useFormDraft";
 
 const roleBadge: Record<Role, string> = {
   ADMIN: "bg-red-100 text-red-700",
@@ -31,7 +32,7 @@ export default function UserManagement() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
-  const [form, setForm] = useState({
+  const [form, setForm, clearForm] = useFormDraft("user_form_draft", {
     username: "",
     email: "",
     password: "",
@@ -72,7 +73,7 @@ export default function UserManagement() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ username: "", email: "", password: "", role: "CANDIDAT", enabled: true });
+    clearForm();
     setOpen(true);
   };
 
@@ -115,6 +116,7 @@ export default function UserManagement() {
         toast("Utilisateur créé", "success");
       }
       setOpen(false);
+      clearForm();
       refresh();
     } catch (err: any) {
       const msg =
