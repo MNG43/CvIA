@@ -1,4 +1,3 @@
-// Fichier: client/JobServiceClientFallbackFactory.java
 package com.smarthr.candidate.client;
 
 import com.smarthr.candidate.dto.JobDTO;
@@ -16,12 +15,13 @@ public class JobServiceClientFallbackFactory implements FallbackFactory<JobServi
             @Override
             public JobDTO getJobById(Long id) {
                 log.error("Feign fallback: Impossible de récupérer le job ID: {}", id, cause);
-                
-                JobDTO fallbackJob = new JobDTO();
-                fallbackJob.setId(id);
-                fallbackJob.setTitle("Poste non disponible");
-                fallbackJob.setDescription("Description du poste non disponible pour le job " + id);
-                return fallbackJob;
+                return new JobDTO(
+                    id,
+                    "Poste non disponible",
+                    "Description du poste non disponible pour le job " + id,
+                    java.util.Collections.emptyList(),
+                    null, null, null, null
+                );
             }
         };
     }

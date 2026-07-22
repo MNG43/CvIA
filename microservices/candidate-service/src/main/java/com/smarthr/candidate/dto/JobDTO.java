@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -12,7 +14,7 @@ public class JobDTO {
     private Long id;
     private String title;
     private String description;
-    private String requiredSkills;
+    private List<String> requiredSkills;
     private String experienceLevel;
     private String salaryRange;
     private String contractType;

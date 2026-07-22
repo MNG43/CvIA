@@ -193,4 +193,38 @@ public class AIController {
         response.put("timestamp", System.currentTimeMillis());
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/embeddings/batch")
+    @Operation(summary = "Générer plusieurs embeddings", description = "Génère des vecteurs d'embedding pour plusieurs textes en une seule requête")
+    public ResponseEntity<Map<String, Object>> generateEmbeddingsBatch(
+            @RequestBody Map<String, List<String>> request) {
+        try {
+            List<String> texts = request.get("texts");
+            if (texts == null || texts.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Le champ 'texts' est requis et ne doit pas être vide"
+                ));
+            }
+
+            List<float[]> embeddings = new ArrayList<>();
+            for (String text : texts) {
+                float[] emb = embeddingService.generateEmbedding(text);
+                embeddings.add(emb);
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("embeddings", embeddings);
+            response.put("count", embeddings.size());
+            response.put("dimension", embeddings.isEmpty() ? 0 : embeddings.get(0).length);
+            response.put("success", true);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Erreur lors de la génération des embeddings batch", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "error", "Erreur lors de la génération: " + e.getMessage(),
+                "success", false
+            ));
+        }
+    }
 }
